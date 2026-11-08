@@ -14,6 +14,7 @@ x-comma: &comma
     SALIX_CONFIG_PATH: /config/config.json
     SALIX_SNOWFLAKE_WORKER_ID: "0"
     COMMA_PROFILE_AVATAR_BUCKET: comma-avatars
+    COMMA_SMTP_TLS_VERIFY: ${COMMA_SMTP_TLS_VERIFY:-peer}
   entrypoint: ["/bin/sh", "/selfhost/entrypoint.sh"]
   volumes:
     - config:/config:ro
