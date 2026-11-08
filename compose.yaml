@@ -29,6 +29,25 @@ services:
         required: false
     environment:
       COMMA_PUBLIC_URL: ${COMMA_PUBLIC_URL:-http://localhost:8080}
+      COMMA_API_URL: ${COMMA_API_URL:-http://localhost:8081}
+      COMMA_ADMIN_URL: ${COMMA_ADMIN_URL:-http://localhost:8082}
+      COMMA_SALIX_URL: ${COMMA_SALIX_URL:-http://localhost:4000}
+      COMMA_OWNER_EMAIL: ${COMMA_OWNER_EMAIL:-}
+      COMMA_ALLOW_SIGNUP: ${COMMA_ALLOW_SIGNUP:-false}
+      COMMA_LLM_BASE_URL: ${COMMA_LLM_BASE_URL:-https://api.openai.com/v1}
+      COMMA_LLM_PROTOCOL: ${COMMA_LLM_PROTOCOL:-chat_completions}
+      COMMA_LLM_MODEL: ${COMMA_LLM_MODEL:-gpt-4.1}
+      COMMA_LLM_API_KEY: ${COMMA_LLM_API_KEY:-}
+      COMMA_LLM_MAX_TOKENS: ${COMMA_LLM_MAX_TOKENS:-8192}
+      COMMA_LLM_CONTEXT_TOKENS: ${COMMA_LLM_CONTEXT_TOKENS:-128000}
+      COMMA_EXA_API_KEY: ${COMMA_EXA_API_KEY:-}
+      COMMA_SMTP_HOST: ${COMMA_SMTP_HOST:-mailpit}
+      COMMA_SMTP_PORT: ${COMMA_SMTP_PORT:-1025}
+      COMMA_SMTP_FROM: ${COMMA_SMTP_FROM:-comma@localhost}
+      COMMA_SMTP_USERNAME: ${COMMA_SMTP_USERNAME:-}
+      COMMA_SMTP_PASSWORD: ${COMMA_SMTP_PASSWORD:-}
+      COMMA_SMTP_TLS: ${COMMA_SMTP_TLS:-never}
+      COMMA_SMTP_SSL: ${COMMA_SMTP_SSL:-false}
     volumes:
       - config:/config
       - ./selfhost/configure.py:/configure.py:ro
