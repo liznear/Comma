@@ -229,7 +229,8 @@ COPY --from=bft-dashboard-builder /src/systems/apps/bridge_for_teams_web/priv/st
 # Build the bridge_for_teams dashboard assets (standalone tailwind+esbuild Hex
 # installers download their binaries here) into priv/static before the release,
 # which bundles each app's priv/. Harmless when the subsystem isn't run.
-RUN mix assets.setup && mix assets.deploy
+# Retry: the binary downloads hit GitHub releases through flaky regional edges.
+RUN ok=0; for i in 1 2 3 4 5; do if mix assets.setup; then ok=1; break; fi; echo "assets.setup retry $i"; sleep 8; done; test "$ok" = 1 && mix assets.deploy
 RUN mix compile && mix release comma
 
 # ---- Stage 2: runtime ------------------------------------------------------
