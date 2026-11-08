@@ -17,12 +17,13 @@ x-comma: &comma
   entrypoint: ["/bin/sh", "/selfhost/entrypoint.sh"]
   volumes:
     - config:/config:ro
-    - ./selfhost/entrypoint.sh:/selfhost/entrypoint.sh:ro
   init: true
 
 services:
   configure:
-    image: python:3.13-alpine
+    build:
+      context: .
+      dockerfile: selfhost/Init.Dockerfile
     entrypoint: ["python", "/configure.py"]
     env_file:
       - path: .env
@@ -50,7 +51,6 @@ services:
       COMMA_SMTP_SSL: ${COMMA_SMTP_SSL:-false}
     volumes:
       - config:/config
-      - ./selfhost/configure.py:/configure.py:ro
     restart: "no"
 
   postgres:

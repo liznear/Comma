@@ -265,6 +265,9 @@ USER 10001:10001
 
 COPY --from=elixir-builder --chown=comma /app/_build/prod/rel/comma ./
 COPY --chown=comma resources/salix-system-files /etc/salix-system
+# Selfhost entrypoint: compose mounts no host files because build platforms
+# clone the repository outside the host filesystem (Coolify helper container).
+COPY --chown=comma selfhost/entrypoint.sh /selfhost/entrypoint.sh
 
 ARG SALIX_APP_REVISION=unknown
 
