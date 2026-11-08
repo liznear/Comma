@@ -15,6 +15,11 @@
 }
 
 :8081 {
+    # Managed-OAuth browser callbacks (github, google, ...) live on the
+    # salix endpoint (4000), not the product API (4200).
+    handle /v1/oauth/* {
+        reverse_proxy comma:4000
+    }
     reverse_proxy comma:4200 {
         flush_interval -1
     }
