@@ -229,13 +229,13 @@ COPY --from=bft-dashboard-builder /src/systems/apps/bridge_for_teams_web/priv/st
 # Build the bridge_for_teams dashboard assets (standalone tailwind+esbuild Hex
 # installers download their binaries here) into priv/static before the release,
 # which bundles each app's priv/. Harmless when the subsystem isn't run.
-# The build network's transparent proxy 504s GitHub release downloads made by
-# OTP's HTTP client while curl through the same path succeeds, so pre-fetch the
-# tailwind binary into the Hex installer cache (esbuild already comes from the
-# npm registry) and keep a bounded retry on the setup itself.
-RUN mkdir -p _build && curl -fsSL --retry 5 --retry-delay 5 \
-      -o _build/tailwind-linux-x64-3.4.13 \
-      https://github.com/tailwindlabs/tailwindcss/releases/download/v3.4.13/tailwindcss-linux-x64 \
+# The build network's transparent proxy 504s GitHub release downloads while the
+# npm registry stays reachable, so take tailwind from npm and expose it at the
+# Hex installer's cache path (install runs with --if-missing and skips the
+# download; the node CLI accepts the same arguments and its --help banner
+# matches the version probe). esbuild already installs from the npm registry.
+RUN npm install -g tailwindcss@3.4.13 \
+    && printf '#!/bin/sh\nexec tailwindcss \"$@\"\n' > _build/tailwind-linux-x64-3.4.13 \
     && chmod +x _build/tailwind-linux-x64-3.4.13
 RUN ok=0; for i in 1 2 3 4 5; do if mix assets.setup; then ok=1; break; fi; echo "assets.setup retry $i"; sleep 8; done; test "$ok" = 1 && mix assets.deploy
 RUN mix compile && mix release comma
