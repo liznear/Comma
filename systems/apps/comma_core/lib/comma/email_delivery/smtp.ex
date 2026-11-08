@@ -86,13 +86,21 @@ defmodule Comma.EmailDelivery.SMTP do
   defp to_integer(port) when is_integer(port), do: port
   defp to_integer(port), do: String.to_integer(port)
 
-  defp trusted_root_anchor(certs) do
+  defp trusted_root_anchor(chain) do
     roots =
       MapSet.new(:public_key.cacerts_get(), fn der ->
         :public_key.der_decode(:Certificate, der)
       end)
 
-    case Enum.find(certs, &MapSet.member?(roots, &1)) do
+    chain
+    |> Enum.find(fn cert ->
+      try do
+        MapSet.member?(roots, :public_key.der_decode(:Certificate, cert))
+      rescue
+        _ -> false
+      end
+    end)
+    |> case do
       nil -> :unknown_ca
       root -> {:trusted_ca, root}
     end
