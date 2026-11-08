@@ -31,18 +31,26 @@ defmodule Comma.EmailDelivery.SMTP do
         verify: :verify_peer,
         cacerts: :public_key.cacerts_get(),
         server_name_indication: String.to_charlist(host),
-        customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
+        customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)],
+        # TLS-terminating paths in front of some relays re-serve the chain with
+        # an appended self-signed root, and OTP then builds an over-long path
+        # and rejects a genuine certificate with {:bad_cert,
+        # :max_path_length_reached}. Anchor validation at the first chain
+        # certificate that is itself a trusted root; hostname checking and peer
+        # verification are unaffected.
+        partial_chain: &trusted_root_anchor/1
       ]
 
       options = [
         relay: host,
         port: to_integer(port),
         retries: 0,
+
         tls:
           if(Keyword.get(mail, :ssl, false), do: :never, else: Keyword.get(mail, :tls, :never)),
         ssl: Keyword.get(mail, :ssl, false),
         tls_options: tls_options,
-        timeout: 5_000,
+        timeout: 15_000,
         auth: if(username == "", do: :never, else: :always),
         username: username,
         password: Keyword.get(mail, :password, "")
@@ -77,4 +85,16 @@ defmodule Comma.EmailDelivery.SMTP do
 
   defp to_integer(port) when is_integer(port), do: port
   defp to_integer(port), do: String.to_integer(port)
+
+  defp trusted_root_anchor(certs) do
+    roots =
+      MapSet.new(:public_key.cacerts_get(), fn der ->
+        :public_key.der_decode(:Certificate, der)
+      end)
+
+    case Enum.find(certs, &MapSet.member?(roots, &1)) do
+      nil -> :unknown_ca
+      root -> {:trusted_ca, root}
+    end
+  end
 end
