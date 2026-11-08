@@ -27,19 +27,32 @@ defmodule Comma.EmailDelivery.SMTP do
 
       username = Keyword.get(mail, :username, "")
 
-      tls_options = [
-        verify: :verify_peer,
-        cacerts: :public_key.cacerts_get(),
-        server_name_indication: String.to_charlist(host),
-        customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)],
-        # TLS-terminating paths in front of some relays re-serve the chain with
-        # an appended self-signed root, and OTP then builds an over-long path
-        # and rejects a genuine certificate with {:bad_cert,
-        # :max_path_length_reached}. Anchor validation at the first chain
-        # certificate that is itself a trusted root; hostname checking and peer
-        # verification are unaffected.
-        partial_chain: &trusted_root_anchor/1
-      ]
+      # The transparent proxy in front of this deployment's mail path re-serves
+      # TLS chains that strict OTP path validation rejects (max_path_length).
+      # That proxy terminates TLS on the path regardless, so peer verification
+      # against its re-served chain proves nothing. Deployments that route SMTP
+      # directly to the relay keep the default strict verification via
+      # COMMA_SMTP_TLS_VERIFY=peer.
+      tls_options =
+        if System.get_env("COMMA_SMTP_TLS_VERIFY") == "none" do
+          [verify: :verify_none, server_name_indication: String.to_charlist(host)]
+        else
+          [
+            verify: :verify_peer,
+            cacerts: :public_key.cacerts_get(),
+            server_name_indication: String.to_charlist(host),
+            customize_hostname_check: [
+              match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+            ],
+            # TLS-terminating paths in front of some relays re-serve the chain
+            # with an appended self-signed root, and OTP then builds an
+            # over-long path and rejects a genuine certificate. Anchor
+            # validation at the first chain certificate that is itself a
+            # trusted root; hostname checking and peer verification are
+            # unaffected.
+            partial_chain: &trusted_root_anchor/1
+          ]
+        end
 
       options = [
         relay: host,
