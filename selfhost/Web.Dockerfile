@@ -13,7 +13,8 @@ RUN tar --exclude=node_modules --exclude=dist --exclude=.git -czf /source.tar.gz
 
 FROM docker.io/library/caddy:2.10-alpine
 # The base image's Alpine packages lag behind its tag: take the current fixes (musl CVE-2026-107891 among them).
-RUN apk upgrade --no-cache
+# Retry: build-host mirrors intermittently reset connections mid-upgrade.
+RUN apk upgrade --no-cache || (sleep 5 && apk upgrade --no-cache) || (sleep 15 && apk upgrade --no-cache)
 COPY selfhost/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /src/clients/apps/web/dist /srv/web
 COPY --from=build /src/clients/apps/admin/dist /srv/admin
